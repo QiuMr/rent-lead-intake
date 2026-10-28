@@ -97,6 +97,8 @@ Content-Type: application/json
 
 ## 更新技能
 
+仓库：<https://github.com/QiuMr/rent-lead-intake>
+
 让 AI 从 GitHub 重新安装最新版即可；本机保存的名字在 `~/.rent-lead/whoami.json`，不会被覆盖。
 
 ## 隐私

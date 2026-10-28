@@ -6,12 +6,15 @@
 - 不需要 token：第一次填名字或称号，保存在本机，后续自动带上。
 - 默认自动入库：不再逐条人工审核；缺联系方式会标成异常。
 - 公网线索页：<http://182.92.214.51:8789/leads>
+- GitHub 仓库：<https://github.com/QiuMr/rent-lead-intake>
 
 ## 安装
 
+直接下载仓库 zip：<https://github.com/QiuMr/rent-lead-intake/archive/refs/heads/main.zip>
+
 ### 豆包工作
 
-1. 下载本目录的 zip（或从 GitHub 下载仓库 zip）。
+1. 下载上面的 zip（或本目录的文件夹）。
 2. 打开豆包工作 → 左侧「插件 · 技能 · 伙伴」→「技能」→ 右上角「+ 添加」→「上传技能」。
 3. 选择 zip 或文件夹，按提示允许联网权限。
 4. 在对话里输入 `/` 或 `@` 找到「租房线索登记」。
@@ -19,12 +22,22 @@
 ### WorkBuddy
 
 1. 打开「技能」→「添加技能」→「上传技能」。
-2. 选择本目录的 zip。
+2. 选择 zip。
 3. 安装后在对话里用 `/` 调用。
 
 ### 让 AI 自己装
 
-把本仓库地址或 `SKILL.md` 的 raw 链接发给支持技能安装的智能体，说“照这个安装租房线索登记技能”。
+把仓库地址发给支持技能安装的智能体：
+
+```text
+https://github.com/QiuMr/rent-lead-intake
+```
+
+或者直接把 `SKILL.md` 的 raw 链接发过去：
+
+```text
+https://raw.githubusercontent.com/QiuMr/rent-lead-intake/main/SKILL.md
+```
 
 ## 第一次使用
 
@@ -45,7 +58,19 @@
 
 ## 更新
 
-让 AI 重新从 GitHub 安装最新版即可。本机名字文件不会被覆盖。
+仓库已发布在 <https://github.com/QiuMr/rent-lead-intake>。
+
+以后改技能：
+
+```bash
+cd skills/rent-lead-intake
+git add .
+git commit -m "rent-lead-intake v0.1.1"
+git tag v0.1.1
+git push origin main --tags
+```
+
+然后让用户/AI 重新从 GitHub 安装最新版；本机名字文件不会被覆盖。
 
 ## 后台地址
 
@@ -55,18 +80,18 @@
 
 技能只把引流员名字、客户原话和已识别字段发到后台，不读取其他文件、不访问其他网站。公网线索页会展示客户联系方式，请只在内部使用。
 
-## 发布到 GitHub
-
-本目录就是技能仓库的根目录。新建一个空仓库后：
+## 本地测试
 
 ```bash
-cd skills/rent-lead-intake
-git init
-git add .
-git commit -m "rent-lead-intake v0.1.0"
-git branch -M main
-git remote add origin https://github.com/<你的账号>/rent-lead-intake.git
-git push -u origin main
+RENT_LEAD_API=http://127.0.0.1:8789 \
+RENT_LEAD_HOME=/tmp/rent-lead-test \
+python scripts/lead.py whoami --set 小王
 ```
 
-以后改技能：改完提交、打 tag（如 `v0.1.1`），让用户重新安装即可。
+Windows PowerShell：
+
+```powershell
+$env:RENT_LEAD_API="http://127.0.0.1:8789"
+.\scripts\lead.ps1 whoami -Set "小王"
+```
+
