@@ -68,17 +68,22 @@ def parse_fields(raw: str) -> dict[str, object] | None:
     return data
 
 
-def post(path: str, payload: dict[str, object]) -> tuple[dict[str, object], int]:
-    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+DIRECT = request.build_opener(request.ProxyHandler({}))
+
+
+def _send(
+    url: str, body: bytes, opener, timeout: int
+) -> tuple[dict[str, object] | None, int, str]:
+    """返回 (响应, 退出码, 网络错误描述)；响应为 None 表示这次没连上。"""
     req = request.Request(
-        API + path,
+        url,
         data=body,
         method="POST",
         headers={"Content-Type": "application/json; charset=utf-8"},
     )
     try:
-        with request.urlopen(req, timeout=20) as resp:
-            return json.loads(resp.read().decode("utf-8")), 0
+        with opener.open(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8")), 0, ""
     except error.HTTPError as exc:
         raw = exc.read().decode("utf-8", "replace")
         try:
@@ -90,14 +95,30 @@ def post(path: str, payload: dict[str, object]) -> tuple[dict[str, object], int]
                 "message": f"后台返回 HTTP {exc.code}",
                 "data": {"body": raw[:300]},
             }
-        return data, 1
+        return data, 1, ""
     except (error.URLError, TimeoutError, OSError) as exc:
-        return {
-            "ok": False,
-            "code": "network_error",
-            "message": f"连不上后台：{exc}",
-            "data": {},
-        }, 1
+        return None, 1, str(exc)
+
+
+def post(path: str, payload: dict[str, object]) -> tuple[dict[str, object], int]:
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    url = API + path
+    # 直连优先：云端沙盒的系统代理常拦截非 443 出网，还会回 502
+    data, code, direct_err = _send(url, body, DIRECT, 10)
+    if data is not None:
+        return data, code
+    data, code, proxy_err = _send(url, body, request.urlopen, 20)
+    if data is not None:
+        return data, code
+    return {
+        "ok": False,
+        "code": "network_error",
+        "message": (
+            f"连不上后台（直连：{direct_err}；系统代理：{proxy_err}）。"
+            "若在云端沙盒中，可设置 NO_PROXY=182.92.214.51 后重试，或让宿主直连。"
+        ),
+        "data": {},
+    }, 1
 
 
 def require_name() -> str:

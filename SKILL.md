@@ -2,7 +2,7 @@
 name: rent-lead-intake
 description: 当用户提供租房客户线索（区域、预算、户型、电话、微信、入住时间等）时，把客户原话登记到租房线索后台。适用于豆包工作、WorkBuddy 等支持 Agent Skills 的宿主。首次使用会先询问引流员的名字或称号并保存在本机，之后自动带上。
 metadata:
-  version: "0.1.0"
+  version: "0.1.1"
   display_name: "租房线索登记"
   author: "rent-lead-hub"
 ---
@@ -62,7 +62,7 @@ metadata:
    - `invalid`：请用户补充区域、预算、户型或联系方式。
    - `unauthorized`：名字被停用，请联系管理员；不要换名字重试。
    - `rate_limited`：稍后再试，不要连续重试。
-   - `network_error`：说明后台暂时连不上，稍后再试。
+   - `network_error`：说明后台暂时连不上；先按下面“云端沙盒与代理”处理一次，仍失败再让用户稍后再试。
 
 ## 补齐一条线索
 
@@ -94,6 +94,15 @@ Content-Type: application/json
 ```
 
 补齐时发 `POST /skill/v1/update_lead`，带上 `advertiser`、`candidate_id`、`fields` 和 `raw_text`。完整返回码见 `references/api.md`。
+
+## 云端沙盒与代理
+
+豆包等宿主可能在云端沙盒里运行技能，沙盒会强制走 HTTP 代理（如 `vortex-*.volces.com:8080`）。这类代理访问 `IP:8789` 常回 502，但同一请求绕过代理直连是通的。
+
+- 内置脚本已经是“直连优先、系统代理兜底”，正常情况下不用手动处理。
+- 如果仍然返回 `network_error`：设置环境变量 `NO_PROXY=182.92.214.51` 后重试一次；还失败就告诉用户“当前宿主的网络连不上后台”，不要反复重试。
+- 出现 502 时不要继续走同一个代理重试，改用直连；宿主只能通过代理出网时，在本机运行技能或等 HTTPS 域名。
+- WorkBuddy 是否走沙盒代理尚未实测；本机运行通常没有这个问题。
 
 ## 更新技能
 
